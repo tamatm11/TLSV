@@ -5,7 +5,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "@/App";
 import "@/index.css";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { injectSpeedInsights } from "@vercel/speed-insights";
+
+// Inject Speed Insights for performance monitoring
+injectSpeedInsights();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
