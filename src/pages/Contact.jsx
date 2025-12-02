@@ -1,10 +1,9 @@
 /** @format */
 
 import React from "react";
-// ví dụ trong Contact.jsx
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 
 const Contact = () => {
@@ -23,6 +22,7 @@ const Contact = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="grid md:grid-cols-2">
+            {/* Cột trái: thông tin liên hệ */}
             <div className="bg-blue-600 p-12 text-white">
               <h2 className="text-3xl font-bold mb-6">Liên Hệ Với Chúng Tôi</h2>
               <p className="text-blue-100 mb-12 text-lg">
@@ -65,6 +65,7 @@ const Contact = () => {
               </div>
             </div>
 
+            {/* Cột phải: form */}
             <div className="p-12">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6">
@@ -75,21 +76,16 @@ const Contact = () => {
                   <label className="text-sm font-medium text-gray-700">
                     Họ và tên
                   </label>
-                  <input
-                    required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Nguyễn Văn A"
-                  />
+                  <Input required placeholder="Nguyễn Văn A" />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
                     Email
                   </label>
-                  <input
+                  <Input
                     required
                     type="email"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="email@example.com"
                   />
                 </div>
