@@ -6,6 +6,7 @@ import React, { useState, useEffect, memo } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  Coffee,
   LogOut,
   Clock,
   Calendar,
@@ -36,6 +37,15 @@ const GAS_API_URL =
   "https://script.google.com/macros/s/AKfycbxiYFhoTEuG90S5lOLeodLrep0UqsgX-jJhzmz4R1zvE2MTwTOfdcFnlY35-9LjAj4K/exec";
 
 const SUBJECTS = [
+  {
+    id: "trial",
+    name: "Khóa Trải Nghiệm Web",
+    keywords: ["TRẢI NGHIỆM WEB", "free", "trải nghiệm", "web"],
+    icon: Coffee,
+    color: "text-cyan-500",
+    bg: "from-cyan-500/10 to-sky-500/10",
+    border: "group-hover:border-cyan-500/50",
+  },
   {
     id: "2k8thpt",
     name: "ĐGNL & ĐGTD 2K8 THPT",
