@@ -6,10 +6,6 @@ import React, { useState, useEffect, memo } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LaptopMinimal,
-  Component,
-  BadgeJapaneseYen,
-  FolderKanban,
   LogOut,
   Clock,
   Calendar,
@@ -37,7 +33,10 @@ import {
   FileText,
   Video,
   Play,
-  Anvil,
+  LaptopMinimal,
+  Component,
+  BadgeJapaneseYen,
+  FolderKanban, // Import thêm icon mới
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -58,7 +57,7 @@ const SUBJECTS = [
     border: "group-hover:border-indigo-500/50",
   },
   {
-    id: "english",
+    id: "english_ielts",
     name: "Tiếng Anh (IELTS)",
     keywords: ["ielts"],
     icon: Globe,
@@ -67,7 +66,7 @@ const SUBJECTS = [
     border: "group-hover:border-cyan-500/50",
   },
   {
-    id: "english",
+    id: "english_toeic",
     name: "Tiếng Anh (TOEIC)",
     keywords: ["toeic"],
     icon: Globe,
@@ -76,7 +75,7 @@ const SUBJECTS = [
     border: "group-hover:border-cyan-500/50",
   },
   {
-    id: "english",
+    id: "english_basic",
     name: "Lấy gốc tiếng Anh",
     keywords: ["anh", "ielts", "toeic", "english"],
     icon: FolderKanban,
@@ -84,7 +83,6 @@ const SUBJECTS = [
     bg: "from-cyan-500/10 to-sky-500/10",
     border: "group-hover:border-cyan-500/50",
   },
-  //----
   {
     id: "chinese",
     name: "Tiếng Trung",
@@ -233,7 +231,6 @@ const LessonList = ({ course, onBack }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Hàm tách SheetID và GID từ link Google Sheet đầy đủ
   const extractSheetInfo = (url) => {
     const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
     const gidMatch = url.match(/[#&]gid=([0-9]+)/);
@@ -254,19 +251,14 @@ const LessonList = ({ course, onBack }) => {
         const txt = await res.text();
         const json = JSON.parse(txt.substr(47).slice(0, -2));
 
-        // Map dữ liệu từ Sheet con:
-        // Cột A (0): Tên Bài Học
-        // Cột B (1): Link Video
-        // Cột C (2): Link Tài Liệu
         const lessonData = json.table.rows
           .slice(1)
           .map((row) => ({
-            // Bỏ dòng tiêu đề (slice 1)
             name: row.c[0]?.v || "Bài học không tên",
             video: row.c[1]?.v || null,
             doc: row.c[2]?.v || null,
           }))
-          .filter((l) => l.name); // Lọc bỏ dòng trống
+          .filter((l) => l.name);
 
         setLessons(lessonData);
       } catch (err) {
@@ -285,7 +277,7 @@ const LessonList = ({ course, onBack }) => {
     if (course.link && course.link.includes("docs.google.com")) {
       fetchLessons();
     } else {
-      setLoading(false); // Nếu không phải link sheet thì không load
+      setLoading(false);
     }
   }, [course, toast]);
 
@@ -500,17 +492,94 @@ const Dashboard = ({ user, onLogout }) => {
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans">
       <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30 pointer-events-none" />
       <header className="bg-[#161b22]/90 backdrop-blur-md border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <img
-            src={user.avatar}
-            alt="Avt"
-            className="w-10 h-10 rounded-full border border-gray-600"
-          />
-          <div className="hidden md:block">
-            <p className="font-bold text-white">{user.name}</p>
-            <p className="text-xs text-gray-400">{user.handle}</p>
-          </div>
+        {/* --- USER PROFILE ĐÃ ĐƯỢC NÂNG CẤP --- */}
+        <div className="flex items-center w-full md:w-1/3">
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-3 bg-gray-800/40 backdrop-blur-md border border-white/10 rounded-full pl-2 pr-6 py-2 hover:border-cyan-500/30 hover:bg-gray-800/60 transition-all duration-300 group cursor-pointer shadow-sm">
+            {/* Avatar có vòng sáng */}
+            <div className="relative">
+              {/* Glow Effect phía sau avatar */}
+              <div className="absolute -inset-1 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full blur-sm opacity-40 group-hover:opacity-80 transition duration-500"></div>
+
+              <img
+                src={user.avatar}
+                alt="Avt"
+                className="relative w-11 h-11 rounded-full object-cover border-2 border-[#161b22] group-hover:scale-105 transition-transform duration-300"
+              />
+
+              {/* Tích xanh verified */}
+              {user.verified && (
+                <div className="absolute -bottom-0.5 -right-0.5 bg-blue-500 text-white rounded-full p-[2px] border-2 border-[#161b22] z-10">
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                </div>
+              )}
+            </div>
+
+            {/* Thông tin Text */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-sm text-gray-100 group-hover:text-cyan-400 transition-colors">
+                  {user.name}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] font-mono font-medium text-gray-400 bg-black/20 px-2 py-0.5 rounded-md border border-white/5 group-hover:border-cyan-500/20 group-hover:text-cyan-200/80 transition-colors">
+                  {user.handle}
+                </span>
+                {/* Chấm xanh Online */}
+                <div className="flex items-center gap-1" title="Đang hoạt động">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
+        {/* ------------------------------------- */}
+
+        {/* --- PHẦN ĐÃ ĐƯỢC NÂNG CẤP HIỆU ỨNG --- */}
+        <div className="hidden lg:flex flex-col items-center justify-center w-1/3">
+          {/* Container với hiệu ứng kính và viền sáng nhẹ */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="relative bg-gray-900/40 backdrop-blur-md border border-cyan-500/20 rounded-full px-8 py-3 shadow-[0_0_15px_rgba(0,255,255,0.05)] hover:shadow-[0_0_20px_rgba(0,255,255,0.2)] hover:border-cyan-500/40 transition-all duration-300 group">
+            {/* Hiệu ứng Glow nền phía sau mờ ảo */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+
+            {/* Dòng tiêu đề với chữ Gradient */}
+            <div className="flex items-center justify-center gap-2 text-sm font-bold mb-1">
+              {/* Icon xoay nhẹ */}
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}>
+                <Sparkles className="w-4 h-4 text-cyan-300" />
+              </motion.div>
+
+              <span className="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+                Chúc bạn có buổi học tập thật năng suất! 🌙
+              </span>
+            </div>
+
+            {/* Dòng quote bên dưới */}
+            <p className="text-xs text-center text-gray-400 italic tracking-wider drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] group-hover:text-gray-300 transition-colors">
+              "Bạn chỉ thất bại khi đã từ bỏ mọi nỗ lực !!!"
+            </p>
+          </motion.div>
+        </div>
+        {/* --------------------------------- */}
+
         <div className="flex gap-4 items-center">
           <ClockHeader />
           <Button onClick={onLogout} variant="destructive" size="sm">
