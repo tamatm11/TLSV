@@ -1,9 +1,7 @@
 /** @format */
-
-// src/lib/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider } from "firebase/auth"; // <--- 1. Thêm dòng này
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA2loKzMaJa8mr6ian2g_QFPDqK9T6NZ3I",
@@ -15,12 +13,17 @@ const firebaseConfig = {
   measurementId: "G-K2333GGMTE",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-// 2. Khởi tạo và Export Auth + Provider để các file khác dùng được
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// --- QUAN TRỌNG: PHẢI CÓ ĐỦ 2 DÒNG NÀY ---
+googleProvider.addScope(
+  "https://www.googleapis.com/auth/spreadsheets.readonly"
+);
+googleProvider.addScope("https://www.googleapis.com/auth/drive.readonly");
+// ------------------------------------------
 
 export default app;

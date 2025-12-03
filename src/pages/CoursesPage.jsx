@@ -1,6 +1,6 @@
 /** @format */
 
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import React, { useState, useEffect, memo } from "react";
 import { Helmet } from "react-helmet-async";
@@ -12,40 +12,30 @@ import {
   ShieldCheck,
   Sparkles,
   Globe,
-  Award,
   GraduationCap,
-  Briefcase,
-  Languages,
-  BookOpenCheck,
   ArrowLeft,
   ExternalLink,
   Loader2,
-  PlayCircle,
   FolderOpen,
-  Calculator,
-  Atom,
-  FlaskConical,
-  Dna,
-  History,
-  Map,
   Code2,
   TrendingUp,
   FileText,
   Video,
-  Play,
   LaptopMinimal,
   Component,
   BadgeJapaneseYen,
-  FolderKanban, // Import thêm icon mới
+  FolderKanban,
+  Lock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
 // --- CẤU HÌNH ---
-const SHEET_ID = "1OrSkxufnQxoxBE4Ky9FJcovGpve4wJpOJzI-kJoCjCA";
-const SHEET_GID = "0";
+const MASTER_SHEET_ID = "1OrSkxufnQxoxBE4Ky9FJcovGpve4wJpOJzI-kJoCjCA";
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
+// --- DANH SÁCH MÔN HỌC ---
 const SUBJECTS = [
   {
     id: "daicuong",
@@ -88,27 +78,27 @@ const SUBJECTS = [
     name: "Tiếng Trung",
     keywords: ["tiếng trung", "trung"],
     icon: Globe,
-    color: "text-cyan-500",
-    bg: "from-cyan-500/10 to-sky-500/10",
-    border: "group-hover:border-cyan-500/50",
+    color: "text-rose-500",
+    bg: "from-rose-500/10 to-pink-500/10",
+    border: "group-hover:border-rose-500/50",
   },
   {
     id: "korean",
     name: "Tiếng Hàn",
     keywords: ["tiếng hàn", "hàn"],
     icon: Globe,
-    color: "text-cyan-500",
-    bg: "from-cyan-500/10 to-sky-500/10",
-    border: "group-hover:border-cyan-500/50",
+    color: "text-blue-400",
+    bg: "from-blue-500/10 to-indigo-500/10",
+    border: "group-hover:border-blue-500/50",
   },
   {
     id: "japanese",
     name: "Tiếng Nhật",
     keywords: ["tiếng nhật", "nhật"],
     icon: BadgeJapaneseYen,
-    color: "text-yellow-500",
-    bg: "from-yellow-500/10 to-orange-500/10",
-    border: "group-hover:border-yellow-500/50",
+    color: "text-red-500",
+    bg: "from-red-500/10 to-orange-500/10",
+    border: "group-hover:border-red-500/50",
   },
   {
     id: "design",
@@ -142,21 +132,43 @@ const SUBJECTS = [
     name: "TIN HỌC VĂN PHÒNG",
     keywords: ["tin học", "office", "word", "excel", "powerpoint"],
     icon: LaptopMinimal,
-    color: "text-amber-400",
-    bg: "from-amber-500/10 to-yellow-500/10",
-    border: "group-hover:border-amber-500/50",
+    color: "text-blue-600",
+    bg: "from-blue-600/10 to-cyan-500/10",
+    border: "group-hover:border-blue-600/50",
   },
   {
     id: "2k8thpt",
     name: "ĐGNL & ĐGTD 2K8 THPT",
     keywords: ["đgnl", "đgtd", "năng lực", "tư duy"],
     icon: Sparkles,
-    color: "text-rose-500",
-    bg: "from-rose-500/10 to-pink-500/10",
-    border: "group-hover:border-rose-500/50",
+    color: "text-purple-500",
+    bg: "from-purple-500/10 to-pink-500/10",
+    border: "group-hover:border-purple-500/50",
   },
 ];
 
+// --- UTILS ---
+const extractSheetInfo = (url) => {
+  if (!url) return { id: null };
+  const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return { id: idMatch ? idMatch[1] : null };
+};
+
+const getCellValue = (cell) => {
+  if (!cell) return "";
+  if (cell.hyperlink) return cell.hyperlink;
+  return cell.formattedValue || "";
+};
+
+const isLink = (text) => {
+  if (!text) return false;
+  const s = text.toString().toLowerCase();
+  return (
+    s.startsWith("http") || s.includes("drive.google") || s.includes("youtube")
+  );
+};
+
+// --- COMPONENTS ---
 const ClockHeader = memo(() => {
   const [dateTime, setDateTime] = useState(new Date());
   useEffect(() => {
@@ -178,10 +190,31 @@ const ClockHeader = memo(() => {
 
 const LoginScreen = ({ onLogin }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
     try {
+      // 1. Ép buộc hỏi quyền để lấy Refresh Token mới (FIX LỖI 403)
+      googleProvider.setCustomParameters({
+        prompt: "select_account consent",
+      });
+
+      // 2. Thêm lại scope Drive Readonly để chắc chắn
+      googleProvider.addScope(
+        "https://www.googleapis.com/auth/spreadsheets.readonly"
+      );
+      googleProvider.addScope("https://www.googleapis.com/auth/drive.readonly");
+
       const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+
+      if (token) {
+        localStorage.setItem("google_access_token", token);
+      } else {
+        throw new Error("Không lấy được Access Token.");
+      }
+
       onLogin({
         name: result.user.displayName,
         handle: result.user.email,
@@ -190,10 +223,12 @@ const LoginScreen = ({ onLogin }) => {
       });
     } catch (e) {
       alert("Đăng nhập thất bại: " + e.message);
+      console.error("Login Error:", e);
     } finally {
       setIsLoggingIn(false);
     }
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
@@ -203,7 +238,7 @@ const LoginScreen = ({ onLogin }) => {
         </div>
         <h2 className="text-3xl font-bold text-white mb-2">Đăng nhập</h2>
         <p className="text-gray-400 mb-8">
-          Vui lòng đăng nhập để truy cập kho tài liệu
+          Đăng nhập bằng Gmail để xác thực quyền truy cập.
         </p>
         <Button
           onClick={handleGoogleLogin}
@@ -225,153 +260,218 @@ const LoginScreen = ({ onLogin }) => {
   );
 };
 
-// --- CẤP 3: CHI TIẾT BÀI HỌC (Lesson List) ---
+// --- CẤP 3: CHI TIẾT BÀI HỌC (SHEET CON - PRIVATE) ---
 const LessonList = ({ course, onBack }) => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const extractSheetInfo = (url) => {
-    const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    const gidMatch = url.match(/[#&]gid=([0-9]+)/);
-    return {
-      id: idMatch ? idMatch[1] : null,
-      gid: gidMatch ? gidMatch[1] : "0",
-    };
+  const getLinkFromCell = (cell) => {
+    if (!cell) return null;
+    if (cell.hyperlink) return cell.hyperlink;
+    const val = cell.formattedValue || "";
+    if (val.startsWith("http")) return val;
+    return null;
   };
 
   useEffect(() => {
     const fetchLessons = async () => {
+      setLoading(true);
+      setErrorMsg("");
+
+      const token = localStorage.getItem("google_access_token");
+      if (!token) {
+        setLoading(false);
+        setErrorMsg("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        return;
+      }
+
+      if (!course.link || !course.link.toString().includes("docs.google.com")) {
+        setLoading(false);
+        setErrorMsg("Link khóa học không hợp lệ.");
+        return;
+      }
+
       try {
-        const { id, gid } = extractSheetInfo(course.link);
-        if (!id) throw new Error("Link không hợp lệ");
+        const { id } = extractSheetInfo(course.link);
+        if (!id) throw new Error("ID Sheet không hợp lệ");
 
-        const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&gid=${gid}`;
-        const res = await fetch(url);
-        const txt = await res.text();
-        const json = JSON.parse(txt.substr(47).slice(0, -2));
+        // Gọi API Sheets - QUAN TRỌNG: Lấy toàn bộ data, không chỉ định Sheet1
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}?includeGridData=true&fields=sheets(data(rowData(values(formattedValue,hyperlink))))`;
 
-        const lessonData = json.table.rows
-          .slice(1)
-          .map((row) => ({
-            name: row.c[0]?.v || "Bài học không tên",
-            video: row.c[1]?.v || null,
-            doc: row.c[2]?.v || null,
-          }))
-          .filter((l) => l.name);
-
-        setLessons(lessonData);
-      } catch (err) {
-        console.error(err);
-        toast({
-          title: "Không thể tải bài học",
-          description:
-            "Link sheet con có thể bị sai hoặc chưa cấp quyền truy cập.",
-          variant: "destructive",
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("LessonList Error:", errorData);
+
+          if (res.status === 403) {
+            throw new Error(
+              "Lỗi 403: Bạn không có quyền xem file này. Vui lòng liên hệ Admin để được cấp quyền Viewer."
+            );
+          }
+          if (res.status === 401) {
+            throw new Error(
+              "Lỗi 401: Token hết hạn. Vui lòng Đăng xuất và Đăng nhập lại."
+            );
+          }
+          throw new Error(
+            `Lỗi Google API (${res.status}): ${errorData.error?.message}`
+          );
+        }
+
+        const data = await res.json();
+        const rows = data.sheets?.[0]?.data?.[0]?.rowData || [];
+        const extractedLessons = [];
+
+        // --- XỬ LÝ LOGIC ĐỌC SHEET NHIỀU CỘT ---
+        // Sheet của bạn có cấu trúc: Tên | Link | Trống | Tên | Link | Trống...
+        // Index cột sẽ là: 0(Tên), 1(Link) -> 3(Tên), 4(Link) -> 6(Tên), 7(Link)
+        rows.forEach((row, rowIndex) => {
+          if (!row.values) return;
+          // Bỏ qua dòng tiêu đề (thường là dòng 0) nếu nó chứa chữ "Buổi Học"
+          if (rowIndex === 0 && row.values[0]?.formattedValue?.includes("Buổi"))
+            return;
+
+          // Duyệt qua từng cặp cột. Bước nhảy là 3 (Cột A,B -> D,E -> G,H)
+          for (let i = 0; i < row.values.length; i += 3) {
+            const nameCell = row.values[i];
+            const linkCell = row.values[i + 1];
+
+            const name = nameCell?.formattedValue;
+            const link = getLinkFromCell(linkCell);
+
+            // Kiểm tra tính hợp lệ: Phải có tên và link
+            if (name && link && name.length > 2) {
+              const isDoc =
+                link.includes("drive/folders") ||
+                link.includes(".pdf") ||
+                link.includes("doc") ||
+                link.includes("slide");
+
+              // Kiểm tra trùng lặp
+              const existing = extractedLessons.find((l) => l.name === name);
+              if (existing) {
+                if (isDoc && !existing.doc) existing.doc = link;
+                else if (!isDoc && !existing.video) existing.video = link;
+              } else {
+                extractedLessons.push({
+                  name: name,
+                  video: !isDoc ? link : null,
+                  doc: isDoc ? link : null,
+                });
+              }
+            }
+          }
+        });
+
+        if (extractedLessons.length === 0)
+          setErrorMsg(
+            "Không tìm thấy bài học nào. Kiểm tra lại cấu trúc Sheet."
+          );
+        else {
+          // Sắp xếp lại bài học theo tên (Buổi 1, Buổi 2...) nếu cần
+          // extractedLessons.sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
+          setLessons(extractedLessons);
+        }
+      } catch (err) {
+        setErrorMsg(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (course.link && course.link.includes("docs.google.com")) {
-      fetchLessons();
-    } else {
-      setLoading(false);
-    }
-  }, [course, toast]);
+    fetchLessons();
+  }, [course]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-800">
+    <div className="flex flex-col h-full bg-transparent">
+      <div className="flex items-center gap-4 p-4 border-b border-gray-700 bg-[#0d1117]/50 backdrop-blur-sm sticky top-0 z-10">
         <Button
           variant="ghost"
           onClick={onBack}
-          className="text-gray-400 hover:text-white hover:bg-white/10 p-2 h-auto rounded-full">
+          className="text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 p-2 h-auto rounded-full">
           <ArrowLeft className="w-6 h-6" />
         </Button>
-        <div>
-          <h2 className="text-2xl font-bold text-white leading-tight">
+        <div className="flex-1 overflow-hidden">
+          <h2
+            className="text-xl font-bold text-white uppercase truncate"
+            title={course.name}>
             {course.name}
           </h2>
-          <p className="text-cyan-400 text-sm mt-1">
-            Danh sách bài giảng & tài liệu
+          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+            <Lock className="w-3 h-3 text-yellow-500" /> Tài liệu nội bộ
           </p>
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
+      <div className="flex-1 overflow-auto custom-scrollbar p-4 md:p-6">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
             <Loader2 className="w-10 h-10 text-cyan-500 animate-spin" />
-            <p className="text-gray-400">Đang tải danh sách bài học...</p>
+            <p className="text-gray-400 font-medium animate-pulse">
+              Đang xác thực quyền truy cập...
+            </p>
+          </div>
+        ) : errorMsg ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-red-500/10 rounded-2xl border border-red-500/20 text-red-400 px-4 text-center">
+            <Lock className="w-12 h-12 mb-3 opacity-50" />
+            <p className="font-medium">{errorMsg}</p>
+            {errorMsg.includes("quyền") && (
+              <p className="text-xs text-gray-500 mt-2 max-w-xs mx-auto">
+                Hãy liên hệ Admin để được thêm vào danh sách lớp.
+              </p>
+            )}
           </div>
         ) : lessons.length > 0 ? (
-          <div className="space-y-3">
-            {lessons.map((lesson, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-cyan-500 hover:shadow-md transition-all">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 min-w-[24px]">
-                      <PlayCircle className="w-6 h-6 text-cyan-600" />
+          <div className="bg-[#0d1117] rounded-xl shadow-lg border border-gray-800 overflow-hidden">
+            <div className="flex items-center bg-gradient-to-r from-gray-800 to-gray-900 p-4 border-b border-gray-700 text-sm font-bold text-white">
+              <div className="flex-1">DANH SÁCH BÀI HỌC ({lessons.length})</div>
+              <div className="w-32 text-center hidden md:block">HÀNH ĐỘNG</div>
+            </div>
+            <div className="divide-y divide-gray-800">
+              {lessons.map((lesson, idx) => (
+                <div
+                  key={idx}
+                  className="group flex flex-col md:flex-row md:items-center hover:bg-gray-800/50 transition-colors py-4 px-5 gap-3">
+                  <div className="flex-1 flex items-start gap-3">
+                    <div className="mt-1 min-w-[24px] text-gray-500 font-mono text-xs">
+                      {idx + 1}.
                     </div>
-                    <h3 className="font-bold text-gray-800 text-lg">
+                    <span className="text-gray-300 font-medium text-sm leading-relaxed group-hover:text-white transition-colors">
                       {lesson.name}
-                    </h3>
+                    </span>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center justify-end md:justify-center min-w-[150px] gap-3">
                     {lesson.video && (
                       <Button
                         size="sm"
-                        className="bg-red-500 hover:bg-red-600 text-white gap-2"
-                        onClick={() => window.open(lesson.video, "_blank")}>
-                        <Video className="w-4 h-4" /> Xem Video
+                        onClick={() => window.open(lesson.video, "_blank")}
+                        className="h-8 px-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-lg text-xs font-bold transition-all shadow-sm gap-1.5">
+                        <Video className="w-3.5 h-3.5" /> Video
                       </Button>
                     )}
                     {lesson.doc && (
                       <Button
                         size="sm"
-                        className="bg-blue-500 hover:bg-blue-600 text-white gap-2"
-                        onClick={() => window.open(lesson.doc, "_blank")}>
-                        <FileText className="w-4 h-4" /> Tài Liệu
+                        onClick={() => window.open(lesson.doc, "_blank")}
+                        className="h-8 px-3 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-lg text-xs font-bold transition-all shadow-sm gap-1.5">
+                        <FileText className="w-3.5 h-3.5" /> Tài liệu
                       </Button>
-                    )}
-                    {!lesson.video && !lesson.doc && (
-                      <span className="text-gray-400 text-sm italic px-2">
-                        Đang cập nhật...
-                      </span>
                     )}
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10 text-gray-400">
-            <FolderOpen className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg">Không tìm thấy bài học nào.</p>
-            {course.link && !course.link.includes("docs.google.com") && (
-              <Button
-                variant="link"
-                className="text-cyan-400 mt-2"
-                onClick={() => window.open(course.link, "_blank")}>
-                Mở liên kết gốc <ExternalLink className="w-4 h-4 ml-1" />
-              </Button>
-            )}
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 };
 
-// --- CẤP 2: DANH SÁCH KHÓA HỌC (Course List) ---
+// --- CẤP 2: DANH SÁCH KHÓA HỌC (SHEET TỔNG - PUBLIC) ---
 const CourseList = ({ subject, onBack, onSelectCourse }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -379,42 +479,67 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
-        const res = await fetch(url);
-        const txt = await res.text();
-        const json = JSON.parse(txt.substr(47).slice(0, -2));
+      setLoading(true);
 
-        const rows = json.table.rows;
+      try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${MASTER_SHEET_ID}?includeGridData=true&fields=sheets(data(rowData(values(formattedValue,hyperlink))))&key=${API_KEY}`;
+
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Master Sheet API Error:", errorData);
+          throw new Error(
+            `Lỗi API (${res.status}): ${
+              errorData.error?.message || "Kiểm tra API Key/ID Sheet"
+            }`
+          );
+        }
+
+        const data = await res.json();
+        const rows = data.sheets?.[0]?.data?.[0]?.rowData || [];
+
+        if (rows.length === 0) {
+          console.warn("Sheet Tổng trả về dữ liệu rỗng.");
+        }
+
         const processedCourses = [];
         let currentCategory = "";
 
-        rows.forEach((row) => {
-          const cellA = row.c[0]?.v;
-          if (cellA) currentCategory = cellA.toString();
-          const cellB = row.c[1]?.v;
-          const cellC = row.c[2]?.v;
+        rows.forEach((row, index) => {
+          if (!row.values) return;
 
-          if (cellB && currentCategory) {
+          const cellA = row.values[0];
+          if (cellA?.formattedValue) currentCategory = cellA.formattedValue;
+
+          const cellB = row.values[1];
+          const courseName = cellB?.formattedValue;
+
+          const cellC = row.values[2];
+          const courseLink = getCellValue(cellC);
+
+          if (courseName && currentCategory) {
             const isMatch = subject.keywords.some((keyword) =>
               currentCategory.toLowerCase().includes(keyword.toLowerCase())
             );
             if (isMatch) {
               processedCourses.push({
-                name: cellB,
-                link: cellC || "#",
+                name: courseName,
+                link: courseLink || "#",
                 category: currentCategory,
               });
             }
           }
         });
+
         setCourses(processedCourses);
       } catch (err) {
         toast({
-          title: "Lỗi kết nối",
-          description: "Không thể tải danh sách khóa học.",
+          title: "Lỗi tải danh sách",
+          description: err.message,
           variant: "destructive",
         });
+        console.error("Fetch Error:", err);
       } finally {
         setLoading(false);
       }
@@ -423,8 +548,8 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
   }, [subject, toast]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-800">
+    <div className="flex flex-col h-full bg-transparent">
+      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-700 p-4 bg-[#0d1117]/50 backdrop-blur-sm">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -438,15 +563,14 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
           <h2 className="text-3xl font-bold text-white">{subject.name}</h2>
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10 px-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
-            <p className="text-gray-400">Đang tải...</p>
+            <p className="text-gray-400">Đang tải danh sách...</p>
           </div>
         ) : courses.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3">
             {courses.map((course, idx) => (
               <motion.div
                 key={idx}
@@ -454,13 +578,13 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => onSelectCourse(course)}
-                className="group cursor-pointer bg-white hover:bg-cyan-50 rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1">
+                className="group cursor-pointer bg-[#0d1117] border border-gray-800 hover:border-cyan-500/50 hover:bg-gray-800/50 rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center group-hover:bg-cyan-100 transition-colors">
-                    <FolderOpen className="w-6 h-6 text-gray-500 group-hover:text-cyan-600" />
+                  <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-cyan-500 font-bold shadow-sm border border-gray-700 group-hover:border-cyan-500/30">
+                    {idx + 1}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg group-hover:text-cyan-700 transition-colors line-clamp-1">
+                    <h3 className="font-bold text-gray-200 text-lg group-hover:text-cyan-400 transition-colors line-clamp-1">
                       {course.name}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
@@ -469,13 +593,17 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
                     </p>
                   </div>
                 </div>
-                <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-cyan-500" />
+                <ExternalLink className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
               </motion.div>
             ))}
           </div>
         ) : (
           <div className="text-center py-20 text-gray-400">
-            Chưa có dữ liệu cho môn này.
+            <FolderOpen className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+            <p className="text-lg font-medium">Chưa tìm thấy dữ liệu</p>
+            <p className="text-sm text-gray-500 mt-2 max-w-xs mx-auto">
+              Vui lòng kiểm tra lại cấu trúc file Google Sheet hoặc API Key.
+            </p>
           </div>
         )}
       </div>
@@ -483,7 +611,7 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
   );
 };
 
-// --- CẤP 1: DASHBOARD ---
+// --- DASHBOARD ---
 const Dashboard = ({ user, onLogout }) => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -491,105 +619,74 @@ const Dashboard = ({ user, onLogout }) => {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans">
       <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30 pointer-events-none" />
-      <header className="bg-[#161b22]/90 backdrop-blur-md border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-        {/* --- USER PROFILE ĐÃ ĐƯỢC NÂNG CẤP --- */}
-        <div className="flex items-center w-full md:w-1/3">
-          <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-3 bg-gray-800/40 backdrop-blur-md border border-white/10 rounded-full pl-2 pr-6 py-2 hover:border-cyan-500/30 hover:bg-gray-800/60 transition-all duration-300 group cursor-pointer shadow-sm">
-            {/* Avatar có vòng sáng */}
-            <div className="relative">
-              {/* Glow Effect phía sau avatar */}
-              <div className="absolute -inset-1 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full blur-sm opacity-40 group-hover:opacity-80 transition duration-500"></div>
-
+      <header className="bg-[#161b22]/90 backdrop-blur-md border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md">
+        <div className="container mx-auto relative flex justify-between items-center h-14">
+          <div className="flex items-center gap-4 z-10">
+            <div className="relative group cursor-pointer">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full blur opacity-50 group-hover:opacity-100 transition duration-200"></div>
               <img
                 src={user.avatar}
                 alt="Avt"
-                className="relative w-11 h-11 rounded-full object-cover border-2 border-[#161b22] group-hover:scale-105 transition-transform duration-300"
+                className="relative w-11 h-11 rounded-full object-cover border-2 border-[#161b22]"
               />
-
-              {/* Tích xanh verified */}
               {user.verified && (
-                <div className="absolute -bottom-0.5 -right-0.5 bg-blue-500 text-white rounded-full p-[2px] border-2 border-[#161b22] z-10">
+                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-0.5 border border-[#0d1117]">
                   <ShieldCheck className="w-2.5 h-2.5" />
                 </div>
               )}
             </div>
-
-            {/* Thông tin Text */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm text-gray-100 group-hover:text-cyan-400 transition-colors">
+            <div className="hidden md:block">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-sm">
                   {user.name}
                 </span>
-              </div>
-
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-mono font-medium text-gray-400 bg-black/20 px-2 py-0.5 rounded-md border border-white/5 group-hover:border-cyan-500/20 group-hover:text-cyan-200/80 transition-colors">
-                  {user.handle}
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                {/* Chấm xanh Online */}
-                <div className="flex items-center gap-1" title="Đang hoạt động">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </div>
+              <p className="text-xs text-gray-400 font-mono bg-gray-800/50 px-1.5 py-0.5 rounded border border-gray-700/50 inline-block mt-1">
+                {user.handle}
+              </p>
+            </div>
+          </div>
+
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:block w-auto z-0">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative px-8 py-2 rounded-full bg-gray-900/40 border border-cyan-500/20 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.15)] group hover:border-cyan-500/40 transition-all duration-300">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative flex flex-col items-center justify-center">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
+                  <span className="text-sm font-bold bg-gradient-to-r from-cyan-200 via-white to-purple-200 bg-clip-text text-transparent">
+                    Chúc bạn có buổi học tập thật năng suất! 🌙
                   </span>
                 </div>
+                <p className="text-[10px] text-gray-400 italic tracking-wider group-hover:text-gray-300 transition-colors">
+                  "Bạn chỉ thất bại khi đã từ bỏ mọi nỗ lực !!!"
+                </p>
               </div>
-            </div>
-          </motion.div>
-        </div>
-        {/* ------------------------------------- */}
-
-        {/* --- PHẦN ĐÃ ĐƯỢC NÂNG CẤP HIỆU ỨNG --- */}
-        <div className="hidden lg:flex flex-col items-center justify-center w-1/3">
-          {/* Container với hiệu ứng kính và viền sáng nhẹ */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="relative bg-gray-900/40 backdrop-blur-md border border-cyan-500/20 rounded-full px-8 py-3 shadow-[0_0_15px_rgba(0,255,255,0.05)] hover:shadow-[0_0_20px_rgba(0,255,255,0.2)] hover:border-cyan-500/40 transition-all duration-300 group">
-            {/* Hiệu ứng Glow nền phía sau mờ ảo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
-
-            {/* Dòng tiêu đề với chữ Gradient */}
-            <div className="flex items-center justify-center gap-2 text-sm font-bold mb-1">
-              {/* Icon xoay nhẹ */}
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}>
-                <Sparkles className="w-4 h-4 text-cyan-300" />
-              </motion.div>
-
-              <span className="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
-                Chúc bạn có buổi học tập thật năng suất! 🌙
-              </span>
-            </div>
-
-            {/* Dòng quote bên dưới */}
-            <p className="text-xs text-center text-gray-400 italic tracking-wider drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] group-hover:text-gray-300 transition-colors">
-              "Bạn chỉ thất bại khi đã từ bỏ mọi nỗ lực !!!"
-            </p>
-          </motion.div>
-        </div>
-        {/* --------------------------------- */}
-
-        <div className="flex gap-4 items-center">
-          <ClockHeader />
-          <Button onClick={onLogout} variant="destructive" size="sm">
-            <LogOut className="w-4 h-4 mr-2" /> Thoát
-          </Button>
+            </motion.div>
+          </div>
+          <div className="flex gap-4 items-center z-10">
+            <ClockHeader />
+            <Button
+              onClick={onLogout}
+              variant="destructive"
+              size="sm"
+              className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 transition-all hover:scale-105">
+              <LogOut className="w-4 h-4 md:mr-2" />{" "}
+              <span className="hidden md:inline">Thoát</span>
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="flex-1 p-4 md:p-8 relative z-10 container mx-auto">
-        <div className="bg-[#161b22]/80 backdrop-blur-md border border-gray-800 rounded-3xl p-6 md:p-8 shadow-2xl h-[calc(100vh-140px)] flex flex-col">
+        <div className="bg-[#161b22]/80 backdrop-blur-md border border-gray-800 rounded-3xl overflow-hidden shadow-2xl h-[calc(100vh-140px)] flex flex-col transition-colors duration-500">
           <AnimatePresence mode="wait">
             {selectedCourse ? (
               <motion.div
@@ -622,8 +719,8 @@ const Dashboard = ({ user, onLogout }) => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="h-full overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+                className="h-full overflow-y-auto custom-scrollbar p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                   {SUBJECTS.map((sub, i) => (
                     <motion.button
                       key={sub.id}
@@ -657,7 +754,6 @@ const Dashboard = ({ user, onLogout }) => {
 
 const CoursesPage = () => {
   const [user, setUser] = useState(null);
-  const { toast } = useToast();
   useEffect(() => {
     const u = localStorage.getItem("tslv_user");
     if (u) setUser(JSON.parse(u));
@@ -691,6 +787,7 @@ const CoursesPage = () => {
               user={user}
               onLogout={() => {
                 localStorage.removeItem("tslv_user");
+                localStorage.removeItem("google_access_token");
                 setUser(null);
               }}
             />
