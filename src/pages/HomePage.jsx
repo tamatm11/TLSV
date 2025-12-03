@@ -12,9 +12,7 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>
-          Tài Liệu Sinh Viên - Nguồn học liệu chất lượng cho sinh viên
-        </title>
+        <title>Trạm Sinh Viên - Nguồn học liệu chất lượng cho sinh viên</title>
         <meta
           name="description"
           content="Tài Liệu Sinh Viên cung cấp các khóa học và tài liệu học tập chất lượng cao cho sinh viên. Khám phá ngay hôm nay!"

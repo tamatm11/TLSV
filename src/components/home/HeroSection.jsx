@@ -54,7 +54,7 @@ const HeroSection = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 blur-3xl opacity-50 animate-pulse" />
               <h1 className="relative text-6xl md:text-8xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Tài Liệu Sinh Viên
+                Trạm Sinh Viên
               </h1>
             </div>
           </motion.div>

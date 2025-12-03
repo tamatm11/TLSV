@@ -37,7 +37,7 @@ const PricingSection = () => {
     },
     {
       id: 5,
-      title: "FULL COMBO SINH VIEN SUPPER PRO",
+      title: "FULL COMBO SINH VIÊN SUPPER PRO",
       price: "589K",
       highlight: false,
       hasSnowflake: true,
