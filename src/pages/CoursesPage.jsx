@@ -37,6 +37,15 @@ const GAS_API_URL =
 
 const SUBJECTS = [
   {
+    id: "2k8thpt",
+    name: "ĐGNL & ĐGTD 2K8 THPT",
+    keywords: ["đgnl", "đgtd", "năng lực", "tư duy"],
+    icon: Sparkles,
+    color: "text-purple-500",
+    bg: "from-purple-500/10 to-pink-500/10",
+    border: "group-hover:border-purple-500/50",
+  },
+  {
     id: "daicuong",
     name: "Đại Cương ĐH",
     keywords: ["đại cương", "cao cấp", "giải tích"],
@@ -134,15 +143,6 @@ const SUBJECTS = [
     color: "text-blue-600",
     bg: "from-blue-600/10 to-cyan-500/10",
     border: "group-hover:border-blue-600/50",
-  },
-  {
-    id: "2k8thpt",
-    name: "ĐGNL & ĐGTD 2K8 THPT",
-    keywords: ["đgnl", "đgtd", "năng lực", "tư duy"],
-    icon: Sparkles,
-    color: "text-purple-500",
-    bg: "from-purple-500/10 to-pink-500/10",
-    border: "group-hover:border-purple-500/50",
   },
 ];
 
@@ -425,9 +425,22 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 text-gray-500 text-lg">
-            <p>Chưa có dữ liệu.</p>
+          // --- ĐÃ SỬA THÔNG BÁO LỖI TẠI ĐÂY ---
+          <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+            <Lock className="w-16 h-16 mb-4 opacity-20 text-yellow-500" />
+            <p className="text-lg text-center max-w-md font-medium text-gray-400 mb-4">
+              Bạn chưa đăng ký khóa, vui lòng liên hệ Admin để đăng ký khóa học
+            </p>
+            <Button
+              variant="outline"
+              className="border-cyan-500/30 text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl gap-2"
+              onClick={() =>
+                window.open("https://zalo.me/0862370152", "_blank")
+              }>
+              Liên hệ Admin
+            </Button>
           </div>
+          // ------------------------------------
         )}
       </div>
     </div>

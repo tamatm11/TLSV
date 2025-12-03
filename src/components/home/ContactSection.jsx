@@ -77,7 +77,7 @@ const ContactSection = () => {
       icon: MessageCircle,
       label: "Zalo",
       color: "text-cyan-400",
-      href: "https://zalo.me/0356026163",
+      href: "https://zalo.me/0862370152",
     },
   ];
 
