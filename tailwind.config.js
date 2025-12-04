@@ -4,6 +4,8 @@
  */
 
 module.exports = {
+  darkMode: "class", // <--- Dòng này quan trọng nhất
+  // .
   darkMode: ["class"],
   content: [
     "./pages/**/*.{js,jsx}",
