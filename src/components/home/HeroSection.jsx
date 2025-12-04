@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Có thể bỏ dòng này nếu không dùng toast nữa
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Có thể bỏ dòng này nếu không dùng toast nữa
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -24,12 +24,14 @@ const HeroSection = () => {
     }
   };
 
+  // --- ĐÃ SỬA PHẦN NÀY ---
   const openYouTubeGuide = () => {
-    toast({
-      title: "🚧 Đang phát triển",
-      description: "Video hướng dẫn sẽ sớm được cập nhật!",
-    });
+    window.open(
+      "https://youtu.be/XkCz9ug5xHo", // <--- Dán link YouTube của bạn vào đây
+      "_blank"
+    );
   };
+  // -----------------------
 
   const openGoogleSheet = () => {
     window.open(
