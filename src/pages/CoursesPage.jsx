@@ -33,8 +33,6 @@ import { auth, googleProvider } from "@/lib/firebase";
 const GAS_API_URL =
   "https://script.google.com/macros/s/AKfycbxiYFhoTEuG90S5lOLeodLrep0UqsgX-jJhzmz4R1zvE2MTwTOfdcFnlY35-9LjAj4K/exec";
 
-// Cập nhật màu sắc cho SUBJECTS để hỗ trợ cả 2 chế độ
-// Cấu trúc: text-màu_đậm (light) dark:text-màu_sáng (dark)
 const SUBJECTS = [
   {
     id: "trial",
@@ -163,7 +161,6 @@ const extractSheetId = (url) => {
 
 // --- COMPONENTS ---
 
-// 1. Clock Header (Đã chỉnh Light/Dark)
 const ClockHeader = memo(() => {
   const [dateTime, setDateTime] = useState(new Date());
   useEffect(() => {
@@ -185,14 +182,13 @@ const ClockHeader = memo(() => {
   );
 });
 
-// 2. Nút chuyển đổi giao diện (Theme Toggle)
 const ThemeToggle = ({ theme, toggleTheme }) => {
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="rounded-full w-10 h-10 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+      className="rounded-full w-10 h-10 bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700 transition-all duration-300 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none backdrop-blur-sm">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={theme}
@@ -211,7 +207,7 @@ const ThemeToggle = ({ theme, toggleTheme }) => {
   );
 };
 
-const LoginScreen = ({ onLogin }) => {
+const LoginScreen = ({ onLogin, theme, toggleTheme }) => {
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -226,24 +222,50 @@ const LoginScreen = ({ onLogin }) => {
     }
   };
   return (
-    // Nền login cũng chuyển màu theo hệ thống hoặc mặc định
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0f] p-4 relative overflow-hidden transition-colors duration-500">
+      <div className="absolute top-5 right-5 z-50">
+        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+      </div>
+
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20 dark:opacity-30" />
+
       <div className="relative z-10 w-full max-w-md bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-cyan-500/30 rounded-3xl p-10 text-center shadow-2xl dark:shadow-[0_0_60px_-15px_rgba(6,182,212,0.3)] backdrop-blur-xl transition-all">
         <div className="mx-auto w-20 h-20 bg-gradient-to-br from-cyan-100 to-purple-100 dark:from-cyan-500/20 dark:to-purple-500/20 rounded-3xl flex items-center justify-center mb-8 border border-cyan-200 dark:border-cyan-500/30">
           <ShieldCheck className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
         </div>
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
-          Chào Mừng
+
+        <h2 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-cyan-600 to-purple-600 dark:from-cyan-400 dark:to-purple-400 bg-clip-text text-transparent">
+          Trạm Sinh Viên
         </h2>
+
         <p className="text-gray-600 dark:text-gray-400 mb-10 text-base">
-          Đăng nhập để truy cập kho tài liệu học tập.
+          Nguồn tài nguyên học tập chất lượng cao. Đăng nhập để bắt đầu.
         </p>
+
         <Button
           onClick={handleLogin}
           className="w-full h-14 bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 font-bold rounded-2xl text-lg transition-all hover:scale-[1.02]">
           Tiếp tục với Google
         </Button>
+
+        <div className="mt-8 grid grid-cols-2 gap-4 pt-8 border-t border-gray-200 dark:border-gray-800">
+          <div>
+            <div className="text-2xl font-bold text-gray-800 dark:text-white">
+              500+
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Khóa học
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-800 dark:text-white">
+              10k+
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Sinh viên
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -251,14 +273,12 @@ const LoginScreen = ({ onLogin }) => {
 
 const LessonList = ({ course, onBack, theme }) => {
   const sheetId = extractSheetId(course.link);
-
   const embedUrl = sheetId
     ? `https://docs.google.com/spreadsheets/d/${sheetId}/preview?widget=true&headers=false`
     : null;
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0d1117] transition-colors duration-300">
-      {/* HEADER */}
       <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-800/60 bg-white/90 dark:bg-[#0d1117]/90 backdrop-blur-md sticky top-0 z-10 transition-colors">
         <div className="flex items-center gap-4">
           <Button
@@ -285,13 +305,11 @@ const LessonList = ({ course, onBack, theme }) => {
         </Button>
       </div>
 
-      {/* CONTENT Iframe */}
       <div className="flex-1 w-full h-full relative bg-white dark:bg-[#0d1117] overflow-hidden">
         {embedUrl ? (
           <iframe
             src={embedUrl}
             title="Google Sheet Content"
-            // Logic đảo màu chỉ áp dụng khi ở Dark Mode
             className={`absolute inset-0 w-full h-full border-none transition-all duration-300 ${
               theme === "dark"
                 ? "filter invert hue-rotate-180 brightness-90 contrast-95"
@@ -318,7 +336,8 @@ const LessonList = ({ course, onBack, theme }) => {
   );
 };
 
-const CourseList = ({ subject, onBack, onSelectCourse }) => {
+// --- COMPONENTS COURSELIST ĐÃ FIX LỖI ---
+const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -328,22 +347,56 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
       try {
         const res = await fetch(`${GAS_API_URL}?action=getCourses`);
         const json = await res.json();
+
         if (json.status === "success") {
-          const filtered = json.data.filter((c) =>
+          // BƯỚC 1: Lọc theo danh mục môn học (Category)
+          let filtered = json.data.filter((c) =>
             subject.keywords.some((k) =>
               c.category.toLowerCase().includes(k.toLowerCase())
             )
           );
+
+          // BƯỚC 2: Lọc theo quyền truy cập (Email) - LOGIC ĐÃ FIX
+          filtered = filtered.filter((c) => {
+            // Chuẩn hóa email người dùng: chữ thường + xóa khoảng trắng 2 đầu
+            const userEmail = user.handle
+              ? user.handle.toLowerCase().trim()
+              : "";
+
+            // Lấy dữ liệu cột access, chuyển thành String để tránh lỗi nếu Sheet trả về số
+            const rawAccess = c.access ? String(c.access).toLowerCase() : "";
+
+            // LOGIC 1: Nếu cột access chứa từ khóa mở -> Cho phép
+            if (
+              rawAccess.includes("all") ||
+              rawAccess.includes("free") ||
+              rawAccess.includes("public") ||
+              rawAccess === "" // Nếu muốn để trống là Free thì giữ dòng này, không thì xóa
+            ) {
+              return true;
+            }
+
+            // LOGIC 2: Tách chuỗi trong Sheet thành mảng các email
+            // Regex /[,;\n\r]+/ nghĩa là: cắt khi gặp dấu phẩy, chấm phẩy, hoặc xuống dòng
+            const allowedEmailsList = rawAccess
+              .split(/[,;\n\r]+/)
+              .map((e) => e.trim()); // Xóa khoảng trắng thừa của từng email trong list
+
+            // LOGIC 3: Kiểm tra email người dùng có nằm trong mảng đó không
+            // Dùng includes của Array chính xác hơn includes của String
+            return allowedEmailsList.includes(userEmail);
+          });
+
           setCourses(filtered);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Lỗi tải khóa học:", err);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [subject]);
+  }, [subject, user]);
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -367,7 +420,9 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-80 gap-4">
             <Loader2 className="w-10 h-10 text-cyan-600 dark:text-cyan-500 animate-spin" />
-            <p className="text-gray-500 text-base">Đang tải khóa học...</p>
+            <p className="text-gray-500 text-base">
+              Đang kiểm tra quyền truy cập...
+            </p>
           </div>
         ) : courses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -402,10 +457,15 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
             ))}
           </div>
         ) : (
+          // Giao diện khi không tìm thấy khóa nào (đã lọc hết hoặc chưa đăng ký)
           <div className="flex flex-col items-center justify-center py-24 text-gray-500">
             <Lock className="w-16 h-16 mb-4 opacity-20 text-yellow-500" />
             <p className="text-lg text-center max-w-md font-medium text-gray-500 dark:text-gray-400 mb-4">
-              Bạn chưa đăng ký khóa, vui lòng liên hệ Admin để đăng ký khóa học
+              Bạn chưa đăng ký khóa học nào trong mục này.
+              <br />
+              <span className="text-sm opacity-70">
+                Vui lòng liên hệ Admin để được cấp quyền truy cập.
+              </span>
             </p>
             <Button
               variant="outline"
@@ -421,19 +481,16 @@ const CourseList = ({ subject, onBack, onSelectCourse }) => {
     </div>
   );
 };
-
 const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
   return (
-    // Container chính: Light (bg-gray-50) / Dark (bg-[#0d1117])
     <div className="min-h-screen bg-gray-50 dark:bg-[#0d1117] text-gray-900 dark:text-white flex flex-col font-sans overflow-hidden transition-colors duration-300">
       <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40 dark:opacity-30 pointer-events-none" />
 
       {/* HEADER */}
       <header className="h-20 px-6 md:px-8 flex items-center justify-between bg-white/80 dark:bg-[#161b22]/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 relative z-50 sticky top-0 transition-colors duration-300">
-        {/* LEFT: LOGO & USER */}
         <div className="flex items-center gap-5">
           <div className="relative group cursor-pointer">
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur opacity-30 group-hover:opacity-70 transition duration-300"></div>
@@ -461,12 +518,10 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
           </div>
         </div>
 
-        {/* CENTER: QUOTE */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center">
           <div className="px-8 py-2 rounded-full bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 flex flex-col items-center justify-center backdrop-blur-sm shadow-sm hover:border-cyan-500/30 transition-colors cursor-default">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-4 h-4 text-cyan-500 dark:text-cyan-300 animate-pulse" />
-              {/* Gradient chữ: Tối hơn ở Light mode, Sáng hơn ở Dark mode */}
               <span className="text-sm font-bold bg-gradient-to-r from-cyan-700 via-purple-700 to-cyan-700 dark:from-cyan-200 dark:via-white dark:to-purple-200 bg-clip-text text-transparent">
                 Chúc bạn có buổi học tập thật năng suất!
               </span>
@@ -477,7 +532,6 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
           </div>
         </div>
 
-        {/* RIGHT: TOOLS */}
         <div className="flex items-center gap-3 md:gap-4">
           <ClockHeader />
           <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
@@ -495,7 +549,6 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 relative overflow-hidden flex flex-col p-4 md:p-8 lg:p-10">
         <div className="flex-1 bg-white/60 dark:bg-[#161b22]/60 backdrop-blur-xl border border-gray-200 dark:border-gray-800/60 rounded-[2rem] overflow-hidden flex flex-col relative shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
           <AnimatePresence mode="wait">
@@ -523,6 +576,7 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
                   subject={selectedSubject}
                   onBack={() => setSelectedSubject(null)}
                   onSelectCourse={setSelectedCourse}
+                  user={user} // --- TRUYỀN USER VÀO ĐÂY ĐỂ CHECK EMAIL ---
                 />
               </motion.div>
             ) : (
@@ -546,7 +600,6 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
                     <div
                       key={sub.id}
                       onClick={() => setSelectedSubject(sub)}
-                      // Card: White (Light) / #161b22 (Dark)
                       className={`group cursor-pointer bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-700/50 ${sub.border} p-8 rounded-3xl flex flex-col items-center gap-6 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-all hover:-translate-y-2 shadow-lg dark:shadow-xl relative overflow-hidden`}>
                       <div
                         className={`absolute inset-0 bg-gradient-to-br ${sub.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
@@ -574,7 +627,6 @@ const CoursesPage = () => {
 
   // --- LOGIC THEME ---
   const [theme, setTheme] = useState(() => {
-    // Lấy theme từ localStorage hoặc mặc định là 'dark'
     if (typeof window !== "undefined") {
       return localStorage.getItem("theme") || "dark";
     }
@@ -583,11 +635,8 @@ const CoursesPage = () => {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    // Xóa class cũ
     root.classList.remove("light", "dark");
-    // Thêm class mới
     root.classList.add(theme);
-    // Lưu vào localStorage
     localStorage.setItem("theme", theme);
   }, [theme]);
 
@@ -605,6 +654,8 @@ const CoursesPage = () => {
     <>
       {!user ? (
         <LoginScreen
+          theme={theme}
+          toggleTheme={toggleTheme}
           onLogin={(u) => {
             localStorage.setItem("tslv_user", JSON.stringify(u));
             setUser(u);
