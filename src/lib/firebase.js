@@ -14,16 +14,17 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// const analytics = getAnalytics(app); // Có thể bỏ comment nếu cần dùng analytics
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// --- QUAN TRỌNG: PHẢI CÓ ĐỦ 2 DÒNG NÀY ---
-googleProvider.addScope(
-  "https://www.googleapis.com/auth/spreadsheets.readonly"
-);
-googleProvider.addScope("https://www.googleapis.com/auth/drive.readonly");
-// ------------------------------------------
+// --- ĐÃ SỬA: XÓA CÁC DÒNG addScope GÂY LỖI ---
+// Bạn chỉ cần dòng này nếu muốn ép buộc tài khoản Google (tùy chọn)
+// googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Tuyệt đối KHÔNG thêm addScope('...spreadsheets...') hay addScope('...drive...')
+// trừ khi bạn định viết code gọi trực tiếp Google API từ phía client (điều mà code hiện tại của bạn không làm).
+// ----------------------------------------------
 
 export default app;
