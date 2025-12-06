@@ -25,6 +25,7 @@ import {
   Moon,
   Sun,
   X,
+  //https://script.google.com/macros/s/AKfycbwASglwYj83xkYwTBR5wF2_4UlYp00UnlJtgDdfkjtK8ej_e2m4ChUlPjgBb9UpNIV_/exec
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signInWithPopup } from "firebase/auth";
@@ -33,7 +34,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 // --- CẤU HÌNH ---
 // HÃY DÁN LINK DEPLOY MỚI NHẤT CỦA BẠN VÀO ĐÂY
 const GAS_API_URL =
-  "https://script.google.com/macros/s/AKfycbxBOz4WC8yoHvySaVL041ycxT_W6JbIcsCGWGdUZIRhg0ccVkSi_xKGK1fBqhQnsQxg/exec";
+  "https://script.google.com/macros/s/AKfycbzMCbwdLw1MPfHG36_iLCcuXIF_WRRe_y_sv9933WWr2WOShjbE179PxkHPXqmO9l1w/exec";
 
 // --- DATA MÔN HỌC (ĐẦY ĐỦ) ---
 const SUBJECTS = [
@@ -513,15 +514,28 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
   const [showDeniedModal, setShowDeniedModal] = useState(false);
   const [deniedReason, setDeniedReason] = useState("");
 
+  // --- ĐOẠN CODE ĐÃ FIX TRONG Dashboard component ---
   const handleCourseClick = async (course) => {
     setIsChecking(true);
     setDeniedReason("");
     try {
-      const userEmail = user?.handle || "";
-      // Thêm debug=true để bỏ qua cache khi test (có thể bỏ đi khi chạy thực tế)
+      // 1. FIX: Chuẩn hóa Email (xóa khoảng trắng thừa, chuyển về chữ thường)
+      // Google Sheet thường phân biệt hoa thường hoặc dính dấu cách khi copy/paste
+      const userEmail = (user?.handle || "").trim().toLowerCase();
+
+      // 2. FIX: Chuẩn hóa Link khóa học
+      const courseLink = (course.link || "").trim();
+
+      // Log ra console (F12) để bạn kiểm tra xem dữ liệu gửi đi có đúng ý muốn không
+      console.log("Đang check quyền cho:", {
+        email: userEmail,
+        link: courseLink,
+      });
+
+      // 3. Gọi API với dữ liệu đã chuẩn hóa
       const url = `${GAS_API_URL}?action=checkAccess&url=${encodeURIComponent(
-        course.link
-      )}&email=${encodeURIComponent(userEmail)}&debug=true`;
+        courseLink
+      )}&email=${encodeURIComponent(userEmail)}&debug=true`; // debug=true giúp bỏ qua cache của Google Script
 
       const res = await fetch(url);
       const json = await res.json();
@@ -529,12 +543,17 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
       if (json.hasAccess) {
         setSelectedCourse(course);
       } else {
-        setDeniedReason(json.reason || "Bạn chưa được cấp quyền truy cập.");
+        // Hiển thị lý do cụ thể từ Server hoặc thông báo mặc định
+        setDeniedReason(
+          json.reason ||
+            `Email "${userEmail}" chưa được cấp quyền truy cập khóa này.`
+        );
         setShowDeniedModal(true);
       }
     } catch (error) {
       console.error("Check access error:", error);
-      alert("Lỗi kết nối server.");
+      setDeniedReason("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+      setShowDeniedModal(true);
     } finally {
       setIsChecking(false);
     }
