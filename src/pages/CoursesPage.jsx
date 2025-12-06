@@ -24,15 +24,18 @@ import {
   Lock,
   Moon,
   Sun,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 // --- CẤU HÌNH ---
+// HÃY DÁN LINK DEPLOY MỚI NHẤT CỦA BẠN VÀO ĐÂY
 const GAS_API_URL =
-  "https://script.google.com/macros/s/AKfycbxiYFhoTEuG90S5lOLeodLrep0UqsgX-jJhzmz4R1zvE2MTwTOfdcFnlY35-9LjAj4K/exec";
+  "https://script.google.com/macros/s/AKfycbxBOz4WC8yoHvySaVL041ycxT_W6JbIcsCGWGdUZIRhg0ccVkSi_xKGK1fBqhQnsQxg/exec";
 
+// --- DATA MÔN HỌC (ĐẦY ĐỦ) ---
 const SUBJECTS = [
   {
     id: "trial",
@@ -226,46 +229,88 @@ const LoginScreen = ({ onLogin, theme, toggleTheme }) => {
       <div className="absolute top-5 right-5 z-50">
         <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
       </div>
-
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsIDI1NSwgMjU1LCAwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20 dark:opacity-30" />
-
       <div className="relative z-10 w-full max-w-md bg-white/80 dark:bg-gray-900/80 border border-gray-200 dark:border-cyan-500/30 rounded-3xl p-10 text-center shadow-2xl dark:shadow-[0_0_60px_-15px_rgba(6,182,212,0.3)] backdrop-blur-xl transition-all">
         <div className="mx-auto w-20 h-20 bg-gradient-to-br from-cyan-100 to-purple-100 dark:from-cyan-500/20 dark:to-purple-500/20 rounded-3xl flex items-center justify-center mb-8 border border-cyan-200 dark:border-cyan-500/30">
           <ShieldCheck className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
         </div>
-
         <h2 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-cyan-600 to-purple-600 dark:from-cyan-400 dark:to-purple-400 bg-clip-text text-transparent">
           Trạm Sinh Viên
         </h2>
-
         <p className="text-gray-600 dark:text-gray-400 mb-10 text-base">
           Nguồn tài nguyên học tập chất lượng cao. Đăng nhập để bắt đầu.
         </p>
-
         <Button
           onClick={handleLogin}
           className="w-full h-14 bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 font-bold rounded-2xl text-lg transition-all hover:scale-[1.02]">
           Tiếp tục với Google
         </Button>
+      </div>
+    </div>
+  );
+};
 
-        <div className="mt-8 grid grid-cols-2 gap-4 pt-8 border-t border-gray-200 dark:border-gray-800">
-          <div>
-            <div className="text-2xl font-bold text-gray-800 dark:text-white">
-              500+
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Khóa học
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-800 dark:text-white">
-              10k+
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Sinh viên
-            </div>
-          </div>
+// --- MODAL THÔNG BÁO TỪ CHỐI TRUY CẬP ---
+const AccessDeniedModal = ({ isOpen, onClose, reason }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white dark:bg-[#1e2329] rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700 relative text-center">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <X className="w-6 h-6" />
+        </button>
+
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-8 h-8 text-red-500 dark:text-red-400" />
         </div>
+
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          Chưa được cấp quyền
+        </h3>
+
+        {reason && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-300 font-mono text-left break-words">
+              {reason}
+            </p>
+          </div>
+        )}
+
+        <p className="text-gray-600 dark:text-gray-300 mb-8 text-sm">
+          Nếu bạn đã đăng ký, vui lòng liên hệ Admin để kiểm tra lại.
+        </p>
+
+        <div className="flex gap-4 justify-center">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Đóng
+          </Button>
+          <Button
+            onClick={() => window.open("https://zalo.me/0862370152", "_blank")}
+            className="flex-1 bg-blue-600 text-white">
+            Liên hệ Admin
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// --- LOADING MODAL KHI CHECK QUYỀN ---
+const CheckingAccessModal = ({ isOpen }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#161b22] px-8 py-6 rounded-2xl shadow-xl flex items-center gap-4 border border-gray-200 dark:border-gray-700">
+        <Loader2 className="w-6 h-6 text-cyan-500 animate-spin" />
+        <span className="text-gray-700 dark:text-gray-200 font-medium">
+          Đang kiểm tra quyền truy cập...
+        </span>
       </div>
     </div>
   );
@@ -336,67 +381,50 @@ const LessonList = ({ course, onBack, theme }) => {
   );
 };
 
-// --- COMPONENTS COURSELIST ĐÃ FIX LỖI ---
-const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
+const CourseList = ({ subject, onBack, onCourseClick }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const load = async () => {
       setLoading(true);
+      setErrorMsg(null);
       try {
-        const res = await fetch(`${GAS_API_URL}?action=getCourses`);
+        const searchKeyword = subject.keywords[0];
+        const url = `${GAS_API_URL}?action=getCourses&category=${encodeURIComponent(
+          searchKeyword
+        )}`;
+
+        const res = await fetch(url, { signal });
         const json = await res.json();
 
         if (json.status === "success") {
-          // BƯỚC 1: Lọc theo danh mục môn học (Category)
-          let filtered = json.data.filter((c) =>
-            subject.keywords.some((k) =>
-              c.category.toLowerCase().includes(k.toLowerCase())
-            )
-          );
-
-          // BƯỚC 2: Lọc theo quyền truy cập (Email) - LOGIC ĐÃ FIX
-          filtered = filtered.filter((c) => {
-            // Chuẩn hóa email người dùng: chữ thường + xóa khoảng trắng 2 đầu
-            const userEmail = user.handle
-              ? user.handle.toLowerCase().trim()
-              : "";
-
-            // Lấy dữ liệu cột access, chuyển thành String để tránh lỗi nếu Sheet trả về số
-            const rawAccess = c.access ? String(c.access).toLowerCase() : "";
-
-            // LOGIC 1: Nếu cột access chứa từ khóa mở -> Cho phép
-            if (
-              rawAccess.includes("all") ||
-              rawAccess.includes("free") ||
-              rawAccess.includes("public") ||
-              rawAccess === "" // Nếu muốn để trống là Free thì giữ dòng này, không thì xóa
-            ) {
-              return true;
-            }
-
-            // LOGIC 2: Tách chuỗi trong Sheet thành mảng các email
-            // Regex /[,;\n\r]+/ nghĩa là: cắt khi gặp dấu phẩy, chấm phẩy, hoặc xuống dòng
-            const allowedEmailsList = rawAccess
-              .split(/[,;\n\r]+/)
-              .map((e) => e.trim()); // Xóa khoảng trắng thừa của từng email trong list
-
-            // LOGIC 3: Kiểm tra email người dùng có nằm trong mảng đó không
-            // Dùng includes của Array chính xác hơn includes của String
-            return allowedEmailsList.includes(userEmail);
-          });
-
-          setCourses(filtered);
+          setCourses(json.data);
+          if (json.data.length === 0) {
+            setErrorMsg(
+              `Đã tìm thấy combo "${searchKeyword}" nhưng chưa có khóa học nào.`
+            );
+          }
+        } else {
+          setErrorMsg(json.message || "Lỗi tải dữ liệu từ Server.");
         }
       } catch (err) {
-        console.error("Lỗi tải khóa học:", err);
+        if (err.name !== "AbortError") {
+          console.error("Fetch Error:", err);
+          setErrorMsg("Không thể kết nối đến máy chủ.");
+        }
       } finally {
-        setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
     };
-    load();
-  }, [subject, user]);
+
+    if (subject) load();
+    return () => controller.abort();
+  }, [subject]);
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -408,7 +436,7 @@ const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <div
-          className={`p-3 rounded-2xl bg-gray-100 dark:bg-gray-800/50 ${subject.color} border border-gray-200 dark:border-white/5 shadow-inner`}>
+          className={`p-3 rounded-2xl bg-gray-100 dark:bg-gray-800/50 ${subject.color}`}>
           <subject.icon className="w-8 h-8" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
@@ -421,7 +449,16 @@ const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
           <div className="flex flex-col items-center justify-center h-80 gap-4">
             <Loader2 className="w-10 h-10 text-cyan-600 dark:text-cyan-500 animate-spin" />
             <p className="text-gray-500 text-base">
-              Đang kiểm tra quyền truy cập...
+              Đang tải danh sách khóa học...
+            </p>
+          </div>
+        ) : errorMsg ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center px-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+              <LogOut className="w-8 h-8 text-red-400" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              {errorMsg}
             </p>
           </div>
         ) : courses.length > 0 ? (
@@ -432,7 +469,7 @@ const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.03 }}
-                onClick={() => onSelectCourse(c)}
+                onClick={() => onCourseClick(c)}
                 className="group bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 hover:border-cyan-500/40 rounded-2xl p-6 cursor-pointer hover:shadow-[0_8px_30px_-10px_rgba(6,182,212,0.2)] transition-all hover:-translate-y-1.5 flex flex-col justify-between h-full gap-5 min-h-[180px] shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -443,13 +480,14 @@ const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
                       {c.name}
                     </h3>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-500 text-sm font-mono border border-gray-100 dark:border-gray-700 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 group-hover:border-cyan-500/30 transition-colors shrink-0">
-                    {i + 1}
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-500 border border-gray-100 dark:border-gray-700 shrink-0">
+                    <GraduationCap className="w-5 h-5" />
                   </div>
                 </div>
+
                 <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800/50 pt-4 mt-auto">
-                  <span className="text-sm text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-400 flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4" /> Tài nguyên
+                  <span className="text-sm text-gray-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-medium flex items-center gap-2 transition-colors">
+                    <FolderOpen className="w-4 h-4" /> Nhấn để học
                   </span>
                   <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-cyan-500 transition-colors" />
                 </div>
@@ -457,33 +495,50 @@ const CourseList = ({ subject, onBack, onSelectCourse, user }) => {
             ))}
           </div>
         ) : (
-          // Giao diện khi không tìm thấy khóa nào (đã lọc hết hoặc chưa đăng ký)
           <div className="flex flex-col items-center justify-center py-24 text-gray-500">
-            <Lock className="w-16 h-16 mb-4 opacity-20 text-yellow-500" />
             <p className="text-lg text-center max-w-md font-medium text-gray-500 dark:text-gray-400 mb-4">
-              Bạn chưa đăng ký khóa học nào trong mục này.
-              <br />
-              <span className="text-sm opacity-70">
-                Vui lòng liên hệ Admin để được cấp quyền truy cập.
-              </span>
+              Không có khóa học nào trong mục này.
             </p>
-            <Button
-              variant="outline"
-              className="border-cyan-500/30 text-cyan-600 dark:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-500 dark:hover:text-cyan-400 rounded-xl gap-2"
-              onClick={() =>
-                window.open("https://zalo.me/0862370152", "_blank")
-              }>
-              Liên hệ Admin
-            </Button>
           </div>
         )}
       </div>
     </div>
   );
 };
+
 const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [showDeniedModal, setShowDeniedModal] = useState(false);
+  const [deniedReason, setDeniedReason] = useState("");
+
+  const handleCourseClick = async (course) => {
+    setIsChecking(true);
+    setDeniedReason("");
+    try {
+      const userEmail = user?.handle || "";
+      // Thêm debug=true để bỏ qua cache khi test (có thể bỏ đi khi chạy thực tế)
+      const url = `${GAS_API_URL}?action=checkAccess&url=${encodeURIComponent(
+        course.link
+      )}&email=${encodeURIComponent(userEmail)}&debug=true`;
+
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (json.hasAccess) {
+        setSelectedCourse(course);
+      } else {
+        setDeniedReason(json.reason || "Bạn chưa được cấp quyền truy cập.");
+        setShowDeniedModal(true);
+      }
+    } catch (error) {
+      console.error("Check access error:", error);
+      alert("Lỗi kết nối server.");
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0d1117] text-gray-900 dark:text-white flex flex-col font-sans overflow-hidden transition-colors duration-300">
@@ -518,20 +573,6 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
           </div>
         </div>
 
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center">
-          <div className="px-8 py-2 rounded-full bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 flex flex-col items-center justify-center backdrop-blur-sm shadow-sm hover:border-cyan-500/30 transition-colors cursor-default">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-cyan-500 dark:text-cyan-300 animate-pulse" />
-              <span className="text-sm font-bold bg-gradient-to-r from-cyan-700 via-purple-700 to-cyan-700 dark:from-cyan-200 dark:via-white dark:to-purple-200 bg-clip-text text-transparent">
-                Chúc bạn có buổi học tập thật năng suất!
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 italic tracking-wider">
-              "Bạn chỉ thất bại khi đã từ bỏ mọi nỗ lực !!!"
-            </p>
-          </div>
-        </div>
-
         <div className="flex items-center gap-3 md:gap-4">
           <ClockHeader />
           <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
@@ -549,6 +590,7 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
         </div>
       </header>
 
+      {/* MAIN CONTENT */}
       <main className="flex-1 relative overflow-hidden flex flex-col p-4 md:p-8 lg:p-10">
         <div className="flex-1 bg-white/60 dark:bg-[#161b22]/60 backdrop-blur-xl border border-gray-200 dark:border-gray-800/60 rounded-[2rem] overflow-hidden flex flex-col relative shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/5 transition-colors duration-300">
           <AnimatePresence mode="wait">
@@ -575,8 +617,7 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
                 <CourseList
                   subject={selectedSubject}
                   onBack={() => setSelectedSubject(null)}
-                  onSelectCourse={setSelectedCourse}
-                  user={user} // --- TRUYỀN USER VÀO ĐÂY ĐỂ CHECK EMAIL ---
+                  onCourseClick={handleCourseClick}
                 />
               </motion.div>
             ) : (
@@ -618,18 +659,28 @@ const Dashboard = ({ user, onLogout, theme, toggleTheme }) => {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* POPUPs */}
+      <AnimatePresence>
+        {isChecking && <CheckingAccessModal key="checking" isOpen={true} />}
+        {showDeniedModal && (
+          <AccessDeniedModal
+            key="denied"
+            isOpen={true}
+            onClose={() => setShowDeniedModal(false)}
+            reason={deniedReason}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 const CoursesPage = () => {
   const [user, setUser] = useState(null);
-
-  // --- LOGIC THEME ---
   const [theme, setTheme] = useState(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined")
       return localStorage.getItem("theme") || "dark";
-    }
     return "dark";
   });
 
@@ -640,10 +691,8 @@ const CoursesPage = () => {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = () =>
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
-  // -------------------
 
   useEffect(() => {
     const u = localStorage.getItem("tslv_user");
