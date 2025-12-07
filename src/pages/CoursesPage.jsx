@@ -292,7 +292,7 @@ const AccessDeniedModal = ({ isOpen, onClose, reason }) => {
             Đóng
           </Button>
           <Button
-            onClick={() => window.open("https://zalo.me/0862370152", "_blank")}
+            onClick={() => window.open("https://zalo.me/0356026163", "_blank")}
             className="flex-1 bg-blue-600 text-white">
             Liên hệ Admin
           </Button>
