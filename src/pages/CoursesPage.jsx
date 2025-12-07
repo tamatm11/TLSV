@@ -34,14 +34,14 @@ import { auth, googleProvider } from "@/lib/firebase";
 // --- CẤU HÌNH ---
 // HÃY DÁN LINK DEPLOY MỚI NHẤT CỦA BẠN VÀO ĐÂY
 const GAS_API_URL =
-  "https://script.google.com/macros/s/AKfycbzMCbwdLw1MPfHG36_iLCcuXIF_WRRe_y_sv9933WWr2WOShjbE179PxkHPXqmO9l1w/exec";
+  "https://script.google.com/macros/s/AKfycbyoYbrLBaFhS5NbQHrU9sFZR9AGdAvrTx91cxFekHzcXtv9UlNpY9tABWdlc6-5FlpZ/exec";
 
 // --- DATA MÔN HỌC (ĐẦY ĐỦ) ---
 const SUBJECTS = [
   {
     id: "trial",
     name: "Khóa Trải Nghiệm Web",
-    keywords: ["TRẢI NGHIỆM WEB", "free", "trải nghiệm", "web"],
+    keywords: ["TRẢI NGHIỆM", "free", "trải nghiệm", "web"],
     icon: Coffee,
     color: "text-cyan-600 dark:text-cyan-500",
     bg: "from-cyan-500/10 to-sky-500/10",
